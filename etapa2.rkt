@@ -92,7 +92,7 @@
 ;   - altfel, PH-ul cu root "mai puțin comp" 
 ;     devine primul fiu al celuilalt
 ;     (la egalitate, ph2 devine fiul lui ph1)
-(define (merge-higher ph1 ph2)
+(define (merge ph1 ph2)
   (cons (ph-root ph1) (cons ph2 (ph-subtrees ph1)))
   )
 
@@ -101,8 +101,8 @@
     (cond
       ((null? ph1) ph2)
       ((null? ph2) ph1)
-      ((comp ph1 ph2) (merge-higher ph1 ph2))
-      (else (merge-higher ph2 ph1))
+      ((comp ph1 ph2) (merge ph1 ph2))
+      (else (merge ph2 ph1))
       )
     )
   )
@@ -227,7 +227,7 @@
 ; RESTRICȚII (10p):
 ;  - Nu identificați elementele listei, ci folosiți o funcțională.
 (define (lst->movie lst)
-  'your-code-here)
+  (apply make-movie lst))
 
 
 ; TODO 4 (10p)
@@ -236,7 +236,8 @@
 ; out: m actualizat astfel încât symbolul 'seen este
 ;      adăugat la începutul câmpului (listei) others
 (define (mark-as-seen m)
-  'your-code-here)
+  (struct-copy movie m [others (cons 'seen (movie-others m))])
+  )
 
 
 ; TODO 5 (10p)
@@ -247,8 +248,26 @@
 ; RESTRICȚII (10p):
 ;  - Nu folosiți recursivitate explicită.
 ;  - Folosiți cel puțin o funcțională.
+(define is-seen-list?
+  (λ (m list)
+    (if (member (movie-name m) list)
+        #t
+        #f
+        )
+    )
+  )
+
 (define (mark-as-seen-from-list movies seen)
-  'your-code-here)
+  (foldr (λ (m s-movies)
+           (if (is-seen-list? m seen)
+               (cons (mark-as-seen m) s-movies)
+               (cons m s-movies)
+               )
+           )
+         null
+         movies
+         )
+  )
 
  
 ; TODO 6 (10p)
@@ -260,8 +279,15 @@
 ;  - Nu folosiți recursivitate explicită.
 ;  - Nu folosiți funcționale de tip fold.
 ;  - Folosiți cel puțin o funcțională.
+(define is-seen-name?
+  (λ (m)
+    (member 'seen (movie-others m))
+    )
+  )
+
 (define (extract-seen movies)
-  'your-code-here)
+  (map movie-name (filter is-seen-name? movies))
+  )
 
 
 ; TODO 7 (15p)
@@ -276,8 +302,32 @@
 ;  - Folosiți cel puțin o funcțională.
 ;  - Nu parcurgeți filmele din listă (sau părți ale listei)
 ;    mai mult decât o dată.
+;; (define (rating-stats movies)
+;;   (map / (foldr (λ (m rating)
+;;                   (cons (if (member 'seen (movie-others m))
+;;                             (cons (+ (car (car rating)) (movie-rating m)) (cdr (car rating)))
+;;                             (cons (car (car rating)) (+ (cdr (car rating)) (movie-rating m))))
+;;                         (if (member 'seen (movie-others m))
+;;                             (cons (+ (car (cdr rating)) 1) (cdr (cdr rating)))
+;;                             (cons (car (cdr rating)) (+ (cdr (cdr rating)) 1)))))
+;;                 '((0 . 0) . (0 . 0))
+;;                 movies)
+;;        )
+;;   )
+
 (define (rating-stats movies)
-  'your-code-here)
+  (foldr (λ (m rating)
+           (if (is-seen-name? m)
+               (cons (cons (+ (car (car rating)) (movie-rating m)) (cdr (car rating)))
+                     (cons (+ (car (cdr rating)) 1) (cdr (cdr rating))))
+               (cons (cons (car (car rating)) (+ (cdr (car rating)) (movie-rating m)))
+                     (cons (car (cdr rating)) (+ (cdr (cdr rating)) 1)))
+               )
+           '((0 . 0) (0 . 0))
+           movies
+           )
+         )
+  )
 
 
 ; TODO 8 (10p)
@@ -289,7 +339,13 @@
 ;  - Nu folosiți recursivitate explicită.
 ;  - Folosiți cel puțin o funcțională.
 (define (extract-name-rating movies)
-  'your-code-here)
+  (foldr (λ (m list)
+           (cons (cons (movie-name m) (movie-rating m)) list)
+           )
+         null
+         movies
+         )
+  )
 
 
 ; TODO 9 (10p)
@@ -302,7 +358,13 @@
 ;  - ...
 ;  - se inserează prima pereche în PH-ul de până acum
 (define (make-rating-ph movies)
-  'your-code-here)
+  (foldr (λ (m ph)
+           (merge-max-rating ph (list m))
+           )
+         null
+         (extract-name-rating movies)
+         )
+  )
 
 
 ; TODO 10 (10p)
