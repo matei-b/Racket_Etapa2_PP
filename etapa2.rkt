@@ -33,6 +33,44 @@
 ; Copiați din etapa 1 implementările funcțiilor
 ; de la TODO 1.
 
+; empty-ph : PH
+; out: PH-ul vid
+(define empty-ph null)
+
+; val->ph : T -> PH
+; in: o valoare de un tip oarecare T
+; out: PH-ul care conține doar această valoare
+(define (val->ph T) (list T))
+
+; ph-empty? : PH -> Bool
+; in: pairing heap ph
+; out: true, dacă ph este vid
+;      false, altfel
+(define (ph-empty? ph)
+  (null? ph)
+  )
+
+; ph-root : PH -> T | Bool
+; in: pairing heap ph
+; out: false, dacă ph e vid
+;      root(ph), altfel
+(define (ph-root ph)
+  (if (null? ph)
+      #f
+      (car ph)  
+      )
+  )
+
+; ph-subtrees : PH -> [PH] | Bool
+; in: pairing heap ph
+; out: false, dacă ph e vid
+;      copii(ph), altfel
+(define (ph-subtrees ph)
+  (if (null? ph)
+      #f
+      (cdr ph)
+      )
+  )
 
 ; TODO 1 (15p)
 ; Definiți funcția merge-f în formă curry, 
@@ -54,8 +92,20 @@
 ;   - altfel, PH-ul cu root "mai puțin comp" 
 ;     devine primul fiu al celuilalt
 ;     (la egalitate, ph2 devine fiul lui ph1)
-(define merge-f
-  'your-code-here)
+(define (merge-higher ph1 ph2)
+  (cons (ph-root ph1) (cons ph2 (ph-subtrees ph1)))
+  )
+
+(define (merge-f comp)
+  (λ (ph1 ph2)
+    (cond
+      ((null? ph1) ph2)
+      ((null? ph2) ph1)
+      ((comp ph1 ph2) (merge-higher ph1 ph2))
+      (else (merge-higher ph2 ph1))
+      )
+    )
+  )
 
 ; merge-max : PH x PH -> PH
 ; in: pairing heaps ph1, ph2
@@ -63,7 +113,18 @@
 ; out: max-PH rezultat din union(ph1, ph2)
 ; RESTRICȚII (5p):
 ;  - Definiția trebuie să fie point-free.
-(define merge-max 'your-code-here)
+(define comp-max
+  (λ (ph1 ph2)
+    (if (>= (ph-root ph1) (ph-root ph2))
+        #t
+        #f
+        )
+    )
+  )
+
+(define merge-max
+  (merge-f comp-max)
+  )
 
 ; merge-min : PH x PH -> PH
 ; in: pairing heaps ph1, ph2
@@ -71,7 +132,18 @@
 ; out: min-PH rezultat din union(ph1, ph2)
 ; RESTRICȚII (5p):
 ;  - Definiția trebuie să fie point-free.
-(define merge-min 'your-code-here)
+(define comp-min
+  (λ (ph1 ph2)
+    (if (<= (ph-root ph1) (ph-root ph2))
+        #t
+        #f
+        )
+    )
+  )
+
+(define merge-min
+  (merge-f comp-min)
+  )
 
 ; merge-max-rating : PH x PH -> PH
 ; in: pairing heaps ph1, ph2
@@ -81,7 +153,18 @@
 ; out: max-PH rezultat din union(ph1, ph2)
 ; RESTRICȚII (5p):
 ;  - Definiția trebuie să fie point-free.
-(define merge-max-rating 'your-code-here)
+(define comp-max-rating
+  (λ (ph1 ph2)
+    (if (>= (cdr (ph-root ph1)) (cdr (ph-root ph2)))
+        #t
+        #f
+        )
+    )
+  )
+
+(define merge-max-rating
+  (merge-f comp-max-rating)
+  )
 
 
 ; TODO 2 (10p)
@@ -90,9 +173,39 @@
 ; încât funcția merge să fie dată ca parametru
 ; (pe prima poziție, ca în apelurile din checker):
 ;  - ph-insert
+(define (ph-insert merge val ph)
+  (merge ph (val->ph val))
+  )
+
 ;  - list->ph
+(define (list->ph merge lst)
+  (cond
+    ((null? lst) null)
+    (else (ph-insert merge (car lst) (list->ph merge (cdr lst))))
+    )
+  )
+
 ;  - two-pass-merge-LR
+(define (two-pass-merge-LR-helper merge phs big-ph)
+  (cond
+    ((null? phs) big-ph)
+    ((= (length phs) 1) (merge big-ph (car phs)))
+    (else (two-pass-merge-LR-helper merge (cdr (cdr phs)) (merge big-ph (merge (car phs) (car (cdr phs))))))
+    )
+  )
+
+(define (two-pass-merge-LR merge phs)
+  (two-pass-merge-LR-helper merge phs null)
+  )
+
 ;  - ph-del-root
+(define (ph-del-root merge ph)
+  (cond
+    ((null? ph) #f)
+    ((= (length ph) 1) null)
+    (else (two-pass-merge-LR-helper merge (cdr ph) null))
+    )
+  )
 
 
 ;; PARTEA A DOUA (cea în care prelucrăm filme)
