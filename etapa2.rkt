@@ -301,33 +301,29 @@
 ;  - Nu folosiți recursivitate explicită.
 ;  - Folosiți cel puțin o funcțională.
 ;  - Nu parcurgeți filmele din listă (sau părți ale listei)
-;    mai mult decât o dată.
-;; (define (rating-stats movies)
-;;   (map / (foldr (λ (m rating)
-;;                   (cons (if (member 'seen (movie-others m))
-;;                             (cons (+ (car (car rating)) (movie-rating m)) (cdr (car rating)))
-;;                             (cons (car (car rating)) (+ (cdr (car rating)) (movie-rating m))))
-;;                         (if (member 'seen (movie-others m))
-;;                             (cons (+ (car (cdr rating)) 1) (cdr (cdr rating)))
-;;                             (cons (car (cdr rating)) (+ (cdr (cdr rating)) 1)))))
-;;                 '((0 . 0) . (0 . 0))
-;;                 movies)
-;;        )
-;;   )
-
+;    mai mult decât o dată.)
 (define (rating-stats movies)
-  (foldr (λ (m rating)
-           (if (is-seen-name? m)
-               (cons (cons (+ (car (car rating)) (movie-rating m)) (cdr (car rating)))
-                     (cons (+ (car (cdr rating)) 1) (cdr (cdr rating))))
-               (cons (cons (car (car rating)) (+ (cdr (car rating)) (movie-rating m)))
-                     (cons (car (cdr rating)) (+ (cdr (cdr rating)) 1)))
-               )
-           '((0 . 0) (0 . 0))
-           movies
-           )
+  (apply cons (map (λ (x)
+                     (if (zero? (cdr x))
+                         0
+                         (/ (car x) (cdr x))
+                         )
+                     )
+                   (foldr (λ (m rating)
+                            (if (is-seen-name? m)
+                                (list (cons (+ (caar rating) (movie-rating m)) (+ (cdar rating) 1))
+                                      (cons (caadr rating) (cdadr rating)))
+                                (list (cons (caar rating) (cdar rating))
+                                      (cons (+ (caadr rating) (movie-rating m)) (+ (cdadr rating) 1)))
+                                )
+                            )
+                          (list (cons 0 0) (cons 0 0))
+                          movies
+                          )
+                   )
          )
   )
+
 
 
 ; TODO 8 (10p)
